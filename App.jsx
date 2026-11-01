@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Trophy, User, Home, Plus, Globe, Users, CheckCircle, Star, Search, X, RefreshCw, LogOut, Swords, Camera } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Trophy, User, Home, Plus, Globe, Users, CheckCircle, Star, Search, X, RefreshCw, LogOut, Swords, Camera, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DICTIONARY = {
@@ -16,7 +16,7 @@ const DICTIONARY = {
     lvl: "Lvl",
     questsDone: "Splnené Questy",
     dailyStreak: "Denný Streak",
-    lang: "Jazyk / Language",
+    lang: "Jazyk",
     signOut: "Odhlásiť sa",
     signIn: "Prihlásiť sa",
     uploadPhoto: "Nahrať fotku (+5 XP)",
@@ -40,15 +40,21 @@ const DICTIONARY = {
     aiEval: "AI Ohodnotenie",
     addQuest: "Pridať Quest",
     days: ["Po", "Ut", "St", "Št", "Pi", "So", "Ne"],
-    q_coldShower: "Studená sprcha",
-    q_urbex: "Urbex Fotka",
-    q_3dPrint: "3D tlač - Model vo Fusion",
-    q_moto: "Údržba motorky (Reťaz/Olej)",
-    q_read: "Prečítať 10 strán knihy",
-    q_code: "Hodina kódovania",
-    q_pushups: "100 kľukov",
     skins: "Vzhľad apky (Skiny)",
-    unlocksAt: "Odomkne lvl"
+    unlocksAt: "Odomkne lvl",
+    welcome: "Vitaj v Side Quest",
+    onboardingDesc: "Vyber si, čo ťa baví, aby sme ti vedeli ušiť questy na mieru.",
+    continue: "Pokračovať do apky",
+    interests: {
+      fitness: "Cvičenie & Fitness",
+      tech: "IT & Kódovanie",
+      creative: "Kreatíva & Tvorba",
+      outdoor: "Príroda & Outdoor",
+      social: "Social & Kamoši",
+      productivity: "Produktivita & Škola",
+      lifestyle: "Životný štýl & Návyky",
+      maker: "3D Tlač & Maker"
+    }
   },
   en: {
     home: "Quests",
@@ -63,7 +69,7 @@ const DICTIONARY = {
     lvl: "Lvl",
     questsDone: "Quests Done",
     dailyStreak: "Daily Streak",
-    lang: "Language / Jazyk",
+    lang: "Language",
     signOut: "Sign Out",
     signIn: "Sign In",
     uploadPhoto: "Upload Photo (+5 XP)",
@@ -87,15 +93,21 @@ const DICTIONARY = {
     aiEval: "AI Evaluation",
     addQuest: "Add Quest",
     days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-    q_coldShower: "Cold Shower",
-    q_urbex: "Urbex Photo",
-    q_3dPrint: "3D Print - Fusion Model",
-    q_moto: "Motorcycle Maintenance",
-    q_read: "Read 10 pages",
-    q_code: "One hour of coding",
-    q_pushups: "100 Pushups",
     skins: "App Skins",
-    unlocksAt: "Unlocks lvl"
+    unlocksAt: "Unlocks lvl",
+    welcome: "Welcome to Side Quest",
+    onboardingDesc: "Select your interests to get personalized quests.",
+    continue: "Enter App",
+    interests: {
+      fitness: "Fitness & Workout",
+      tech: "IT & Coding",
+      creative: "Creative & Art",
+      outdoor: "Nature & Outdoor",
+      social: "Social & Friends",
+      productivity: "Productivity & School",
+      lifestyle: "Lifestyle & Habits",
+      maker: "3D Print & Maker"
+    }
   }
 };
 
@@ -105,6 +117,45 @@ const SKINS = [
   { id: 'oled', name: 'OLED Pitch Black', unlockLevel: 10, gradient: 'from-neutral-700 to-neutral-500', color: 'neutral-300', hex: '#d4d4d4' },
   { id: 'sunset', name: 'Sunset Gold', unlockLevel: 15, gradient: 'from-orange-600 to-yellow-400', color: 'yellow-400', hex: '#facc15' },
   { id: 'emerald', name: 'Toxic Emerald', unlockLevel: 25, gradient: 'from-emerald-600 to-green-400', color: 'emerald-400', hex: '#34d399' },
+];
+
+const MASTER_QUEST_LIBRARY = [
+  // Tech & Coding
+  { id: 't1', key: 'Hodina kódovania (Python/JS)', tags: ['tech', 'productivity'], xp: 50 },
+  { id: 't2', key: 'Vyrieš 1 LeetCode problém', tags: ['tech'], xp: 45 },
+  { id: 't3', key: 'Prečítaj si IT článok (Medium/Dev.to)', tags: ['tech', 'lifestyle'], xp: 20 },
+  { id: 't4', key: 'Zálohuj si dôležité súbory', tags: ['tech', 'productivity'], xp: 30 },
+  { id: 't5', key: 'Upratať plochu na počítači', tags: ['tech', 'productivity'], xp: 15 },
+  { id: 't6', key: 'Nakonfiguruj si nový Linux nástroj', tags: ['tech'], xp: 60 },
+  { id: 't7', key: 'Pozri si 1 tutoriál o programovaní', tags: ['tech'], xp: 35 },
+  // Fitness
+  { id: 'f1', key: '100 kľukov', tags: ['fitness'], xp: 40 },
+  { id: 'f2', key: 'Choď do gymu (Leg day)', tags: ['fitness'], xp: 70 },
+  { id: 'f3', key: 'Choď do gymu (Upper body)', tags: ['fitness'], xp: 70 },
+  { id: 'f4', key: '10 minút strečing', tags: ['fitness', 'lifestyle'], xp: 20 },
+  { id: 'f5', key: 'Urob si 30 drepov', tags: ['fitness'], xp: 25 },
+  { id: 'f6', key: 'Zabehni 3 kilometre', tags: ['fitness', 'outdoor'], xp: 60 },
+  { id: 'f7', key: 'Vypi 3 litre vody', tags: ['fitness', 'lifestyle'], xp: 30 },
+  // Maker / 3D Print / Moto
+  { id: 'm1', key: 'Navrhni súčiastku vo Fusion 360', tags: ['maker', 'tech'], xp: 55 },
+  { id: 'm2', key: 'Vytlač 3D model', tags: ['maker'], xp: 40 },
+  { id: 'm3', key: 'Vyčisti a namaž reťaz na motorke', tags: ['maker', 'outdoor'], xp: 50 },
+  { id: 'm4', key: 'Kalibrácia 3D tlačiarne', tags: ['maker'], xp: 35 },
+  // Outdoor & Social
+  { id: 'o1', key: 'Urbex Fotka (Nové miesto)', tags: ['outdoor', 'creative'], xp: 60 },
+  { id: 'o2', key: 'Choď von na bicykel', tags: ['outdoor', 'fitness'], xp: 50 },
+  { id: 'o3', key: 'Stráv 30 minút na slnku bez mobilu', tags: ['outdoor', 'lifestyle'], xp: 30 },
+  { id: 's1', key: 'Napíš kamošovi, s ktorým si dlho nehovoril', tags: ['social'], xp: 25 },
+  { id: 's2', key: 'Choď von s kamošmi', tags: ['social'], xp: 45 },
+  // Lifestyle & Productivity
+  { id: 'l1', key: 'Studená sprcha (3 minúty)', tags: ['lifestyle', 'fitness'], xp: 35 },
+  { id: 'l2', key: 'Prečítaj 10 strán z knihy', tags: ['productivity', 'lifestyle'], xp: 20 },
+  { id: 'l3', key: 'Choď spať pred 23:00', tags: ['lifestyle', 'fitness'], xp: 40 },
+  { id: 'l4', key: 'Upratať si izbu', tags: ['lifestyle', 'productivity'], xp: 30 },
+  { id: 'l5', key: 'Skús meditovať 10 minút', tags: ['lifestyle'], xp: 25 },
+  { id: 'l6', key: '0 hodín na TikToku / Reals', tags: ['productivity', 'lifestyle'], xp: 50 },
+  { id: 'p1', key: 'Napíš si ciele na tento týždeň', tags: ['productivity'], xp: 30 },
+  { id: 'p2', key: 'Urob si úlohu do školy predčasne', tags: ['productivity'], xp: 50 },
 ];
 
 export default function App() {
@@ -117,6 +168,8 @@ export default function App() {
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState([]);
   
   const [pfp, setPfp] = useState(null);
   const [userStats, setUserStats] = useState({ xp: 4550, level: 1, streak: 12, questsDone: 1 });
@@ -125,65 +178,55 @@ export default function App() {
   const pfpInputRef = useRef(null);
   const questPhotoInputRef = useRef(null);
 
-  const defaultQuests = [
-    { id: 'def1', key: 'q_coldShower', xp: 25 },
-    { id: 'def2', key: 'q_urbex', xp: 60 },
-    { id: 'def3', key: 'q_3dPrint', xp: 40 },
-    { id: 'def4', key: 'q_moto', xp: 50 },
-  ];
-  
-  const [quests, setQuests] = useState(defaultQuests);
-  const [customQuests, setCustomQuests] = useState([]);
+  const [quests, setQuests] = useState([]);
   const [history, setHistory] = useState([]);
   const [favorites, setFavorites] = useState([]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isolatedQuestId, setIsolatedQuestId] = useState(null);
   const [selectedQuestToComplete, setSelectedQuestToComplete] = useState(null);
-  const [challengeModal, setChallengeModal] = useState({ open: false, friend: null });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setUserStats(prev => ({ ...prev, level: Math.floor(prev.xp / 1000) + 1 }));
   }, [userStats.xp]);
 
-  const handlePfpUpload = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setPfp(URL.createObjectURL(e.target.files[0]));
+  useEffect(() => {
+    if (activeSkin.id === 'default' && userStats.level >= 5) {
+      setActiveSkin(SKINS.find(s => s.id === 'cyberpunk') || SKINS[0]);
     }
+  }, [userStats.level]);
+
+  const generateQuestsForUser = (interests) => {
+    let pool = MASTER_QUEST_LIBRARY;
+    if (interests.length > 0) {
+      pool = MASTER_QUEST_LIBRARY.filter(q => q.tags.some(tag => interests.includes(tag)));
+      if (pool.length < 4) pool = MASTER_QUEST_LIBRARY;
+    }
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 4);
   };
 
   const handleGoogleLogin = () => {
     setIsLoggingIn(true);
     setTimeout(() => {
-      setIsLoggedIn(true);
+      setShowOnboarding(true);
       setIsLoggingIn(false);
     }, 1500);
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-6 text-neutral-200">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center w-full max-w-sm">
-          <Trophy size={64} className="text-sky-400 mb-8 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]" />
-          <h1 className="text-4xl font-serif text-white mb-2">Side Quest</h1>
-          <p className="text-neutral-400 mb-12">Level up in real life.</p>
-          <button onClick={handleGoogleLogin} className="w-full bg-white text-black font-medium py-4 px-8 rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform mb-4">
-            {isLoggingIn ? <RefreshCw className="animate-spin text-neutral-500" /> : <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" />}
-            {isLoggingIn ? "Pripájam..." : "Prihlásiť sa cez Google"}
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+  const finishOnboarding = () => {
+    setQuests(generateQuestsForUser(selectedInterests));
+    setShowOnboarding(false);
+    setIsLoggedIn(true);
+  };
 
   const completeQuest = (photoUrl = null) => {
     if (!selectedQuestToComplete) return;
-    const isCustom = selectedQuestToComplete.custom;
     const finalXp = selectedQuestToComplete.xp + (photoUrl ? 5 : 0);
     
     const historyItem = {
       instanceId: Date.now().toString(),
-      name: isCustom ? selectedQuestToComplete.name : t[selectedQuestToComplete.key],
+      name: selectedQuestToComplete.key || selectedQuestToComplete.name,
       xp: finalXp,
       photo: photoUrl,
       timestamp: new Date().toLocaleTimeString(),
@@ -192,13 +235,7 @@ export default function App() {
 
     setHistory([historyItem, ...history]);
     setUserStats(prev => ({ ...prev, xp: prev.xp + finalXp, questsDone: prev.questsDone + 1 }));
-
-    if (!isCustom) {
-      setQuests(quests.filter(q => q.id !== selectedQuestToComplete.id));
-    } else {
-      setCustomQuests(customQuests.filter(q => q.id !== selectedQuestToComplete.id));
-    }
-    
+    setQuests(quests.filter(q => q.id !== selectedQuestToComplete.id));
     setSelectedQuestToComplete(null);
   };
 
@@ -210,47 +247,80 @@ export default function App() {
     }
   };
 
-  const handleShowFavorite = (instanceId) => {
-    setIsFavoritesOpen(false);
-    setActiveTab('history');
-    setIsolatedQuestId(instanceId);
-    setSearchQuery('');
+  const toggleInterest = (tag) => {
+    if (selectedInterests.includes(tag)) {
+      setSelectedInterests(selectedInterests.filter(i => i !== tag));
+    } else {
+      setSelectedInterests([...selectedInterests, tag]);
+    }
   };
 
   const cText = `text-${activeSkin.color}`;
   const cBorder = `border-${activeSkin.color}`;
   const cBg = `bg-${activeSkin.color}`;
 
+  if (!isLoggedIn && !showOnboarding) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-6 text-neutral-200">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center w-full max-w-sm">
+          <Trophy size={64} className="text-sky-400 mb-8 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]" />
+          <h1 className="text-4xl font-serif text-white mb-2">Side Quest</h1>
+          <p className="text-neutral-400 mb-12">Level up in real life.</p>
+          <button onClick={handleGoogleLogin} className="w-full bg-white text-black font-medium py-4 px-8 rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform mb-4">
+            {isLoggingIn ? <RefreshCw className="animate-spin text-neutral-500" /> : <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" />}
+            {isLoggingIn ? (lang === 'sk' ? "Pripájam..." : "Connecting...") : t.signIn}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (showOnboarding) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex flex-col p-6 text-neutral-200 pt-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 w-full max-w-md mx-auto flex flex-col">
+          <h1 className="text-3xl font-serif text-sky-400 mb-3">{t.welcome}</h1>
+          <p className="text-neutral-400 mb-8">{t.onboardingDesc}</p>
+          
+          <div className="flex-1 flex content-start flex-wrap gap-3 mb-10 overflow-y-auto">
+            {Object.entries(t.interests).map(([tag, label]) => {
+              const isSelected = selectedInterests.includes(tag);
+              return (
+                <button 
+                  key={tag} 
+                  onClick={() => toggleInterest(tag)}
+                  className={`px-4 py-3 rounded-xl border transition-all active:scale-95 ${isSelected ? 'border-sky-400 bg-sky-400/10 text-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.2)]' : 'border-neutral-800 bg-neutral-900 text-neutral-400'}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <button onClick={finishOnboarding} className="w-full bg-sky-500 text-white font-medium py-4 px-8 rounded-xl active:scale-95 transition-transform mt-auto mb-8 shadow-lg shadow-sky-500/20">
+            {t.continue}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   const renderHome = () => (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 pb-24">
       <div className="flex justify-between items-end border-b border-neutral-800 pb-2">
         <h2 className={`text-2xl font-serif ${cText}`}>{t.home}</h2>
-        <button onClick={() => setQuests([...defaultQuests].sort(() => 0.5 - Math.random()))} className={`text-sm text-neutral-400 flex items-center gap-1 active:${cText} transition-colors`}>
+        <button onClick={() => setQuests(generateQuestsForUser(selectedInterests))} className={`text-sm text-neutral-400 flex items-center gap-1 active:${cText} transition-colors`}>
           <RefreshCw size={14} /> {t.refresh}
         </button>
       </div>
       <div className="space-y-4">
+        {quests.length === 0 && <p className="text-neutral-500 text-center py-10">Všetky questy splnené. Skús obnoviť zoznam!</p>}
         {quests.map(q => (
           <motion.div whileTap={{ scale: 0.98 }} key={q.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex justify-between items-center shadow-lg">
-            <span className="font-medium text-white">{t[q.key]}</span>
+            <span className="font-medium text-white">{q.name || q.key}</span>
             <div className="flex items-center gap-4">
               <span className="text-xs text-neutral-400">+{q.xp} XP</span>
-              <button onClick={() => setSelectedQuestToComplete(q)} className={`w-8 h-8 rounded-full border-2 ${cBorder} active:bg-${activeSkin.color}/20 transition-colors`} />
-            </div>
-          </motion.div>
-        ))}
-        {customQuests.map(q => (
-          <motion.div whileTap={{ scale: 0.98 }} key={q.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col gap-3 shadow-lg">
-            <div className="flex justify-between items-center">
-              <span className={`font-medium ${cText}`}>{q.name}</span>
-              <span className={`text-xs ${cText}`}>+{q.xp} XP / den</span>
-            </div>
-            <div className="flex gap-2">
-              {q.days.map((day, idx) => (
-                <div key={idx} onClick={() => setSelectedQuestToComplete({...q, custom: true})} className={`w-8 h-8 rounded-full border border-neutral-700 flex items-center justify-center text-xs text-neutral-400 active:${cBorder} cursor-pointer`}>
-                  {day}
-                </div>
-              ))}
+              <button onClick={() => setSelectedQuestToComplete(q)} className={`w-8 h-8 rounded-full border-2 ${cBorder} active:bg-${activeSkin.color}/20 transition-colors shrink-0`} />
             </div>
           </motion.div>
         ))}
@@ -287,11 +357,11 @@ export default function App() {
             displayedHistory.map(h => (
               <div key={h.instanceId} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 shadow-lg">
                 <div className="flex justify-between items-start mb-3">
-                  <div>
+                  <div className="pr-4">
                     <h3 className="font-medium text-white">{h.name}</h3>
                     <p className="text-xs text-neutral-500">{h.timestamp} • +{h.xp} XP</p>
                   </div>
-                  <button onClick={() => toggleFavorite(h)}>
+                  <button onClick={() => toggleFavorite(h)} className="shrink-0">
                     <Star size={20} className={favorites.some(f => f.instanceId === h.instanceId) ? `fill-${activeSkin.color} ${cText}` : "text-neutral-600"} />
                   </button>
                 </div>
@@ -379,7 +449,7 @@ export default function App() {
                  <button onClick={() => {
                      const name = document.getElementById('customQName').value || 'Custom Quest';
                      const randomXp = Math.floor(Math.random() * (60 - 15 + 1)) + 15;
-                     setCustomQuests([{ id: Date.now().toString(), name, xp: randomXp, days: ["Po", "St", "Pi"] }, ...customQuests]);
+                     setQuests([{ id: Date.now().toString(), key: name, xp: randomXp, custom: true }, ...quests]);
                      setActiveTab('home');
                    }}
                    className={`w-full text-white py-3 rounded-lg font-medium active:scale-95 transition-transform shadow-lg shadow-${activeSkin.color}/20`}
@@ -458,7 +528,7 @@ export default function App() {
               ))}
             </div>
 
-            <button onClick={() => setIsLoggedIn(false)} className="mt-auto mb-8 w-full border border-red-900/30 bg-red-900/10 text-red-500 py-4 rounded-xl flex justify-center items-center gap-2 font-medium">
+            <button onClick={() => { setIsLoggedIn(false); setShowOnboarding(false); }} className="mt-auto mb-8 w-full border border-red-900/30 bg-red-900/10 text-red-500 py-4 rounded-xl flex justify-center items-center gap-2 font-medium active:scale-95 transition-transform">
               <LogOut size={18} />
               {t.signOut}
             </button>
@@ -493,7 +563,7 @@ export default function App() {
         {selectedQuestToComplete && (
           <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }} className="fixed inset-0 bg-black/80 z-50 flex items-end p-4 pb-24 backdrop-blur-sm">
             <div className="bg-neutral-900 w-full rounded-3xl p-6 border border-neutral-800 space-y-4 shadow-2xl">
-              <h3 className="text-xl text-white font-medium text-center mb-6">{selectedQuestToComplete.custom ? selectedQuestToComplete.name : t[selectedQuestToComplete.key]}</h3>
+              <h3 className="text-xl text-white font-medium text-center mb-6">{selectedQuestToComplete.key || selectedQuestToComplete.name}</h3>
               <button onClick={() => completeQuest()} className={`w-full py-4 rounded-xl text-white font-medium active:scale-95 transition-transform shadow-lg shadow-${activeSkin.color}/20`} style={{ backgroundColor: activeSkin.hex }}>
                 {t.completeQuest}
               </button>
