@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trophy, User, Home, Plus, Globe, Users, CheckCircle, Star, Search, X, RefreshCw, LogOut, Swords, Camera, Filter } from 'lucide-react';
+import { Trophy, User, Home, Plus, Globe, Users, CheckCircle, Star, Search, X, RefreshCw, LogOut, Swords, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DICTIONARY = {
@@ -9,7 +9,7 @@ const DICTIONARY = {
     leaderboard: "Rebríček",
     friends: "Kamoši",
     history: "História",
-    refresh: "Obnoviť questy",
+    refresh: "Nové AI Questy",
     profile: "Tvoj Profil",
     change: "ZMENIŤ",
     totalXp: "Celkové XP",
@@ -43,7 +43,7 @@ const DICTIONARY = {
     skins: "Vzhľad apky (Skiny)",
     unlocksAt: "Odomkne lvl",
     welcome: "Vitaj v Side Quest",
-    onboardingDesc: "Vyber si, čo ťa baví, aby sme ti vedeli ušiť questy na mieru.",
+    onboardingDesc: "Vyber si, čo ťa baví, aby ti AI vedela ušiť questy na mieru.",
     continue: "Pokračovať do apky",
     interests: {
       fitness: "Cvičenie & Fitness",
@@ -54,59 +54,6 @@ const DICTIONARY = {
       productivity: "Produktivita & Škola",
       lifestyle: "Životný štýl & Návyky",
       maker: "3D Tlač & Maker"
-    }
-  },
-  en: {
-    home: "Quests",
-    newQuest: "New Quest",
-    leaderboard: "Leaderboard",
-    friends: "Friends",
-    history: "History",
-    refresh: "Refresh quests",
-    profile: "Your Profile",
-    change: "CHANGE",
-    totalXp: "Total XP",
-    lvl: "Lvl",
-    questsDone: "Quests Done",
-    dailyStreak: "Daily Streak",
-    lang: "Language",
-    signOut: "Sign Out",
-    signIn: "Sign In",
-    uploadPhoto: "Upload Photo (+5 XP)",
-    skipPhoto: "Skip (No photo)",
-    completeQuest: "Complete Quest",
-    searchHistory: "Search history...",
-    noHistory: "No completed quests yet.",
-    attachedPhoto: "Attached photo",
-    favorites: "Favorite Quests",
-    show: "Show",
-    isolatedView: "Showing specific quest",
-    cancelFilter: "Cancel filter",
-    you: "You",
-    challenge: "Challenge Friend",
-    customMessage: "Your message to friend...",
-    for24h: "For 24 hours",
-    forWeekend: "For this weekend",
-    sendChallenge: "Send Challenge",
-    challengeSent: "Challenge Sent!",
-    questName: "Name of your quest...",
-    aiEval: "AI Evaluation",
-    addQuest: "Add Quest",
-    days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-    skins: "App Skins",
-    unlocksAt: "Unlocks lvl",
-    welcome: "Welcome to Side Quest",
-    onboardingDesc: "Select your interests to get personalized quests.",
-    continue: "Enter App",
-    interests: {
-      fitness: "Fitness & Workout",
-      tech: "IT & Coding",
-      creative: "Creative & Art",
-      outdoor: "Nature & Outdoor",
-      social: "Social & Friends",
-      productivity: "Productivity & School",
-      lifestyle: "Lifestyle & Habits",
-      maker: "3D Print & Maker"
     }
   }
 };
@@ -119,48 +66,51 @@ const SKINS = [
   { id: 'emerald', name: 'Toxic Emerald', unlockLevel: 25, gradient: 'from-emerald-600 to-green-400', color: 'emerald-400', hex: '#34d399' },
 ];
 
-const MASTER_QUEST_LIBRARY = [
-  // Tech & Coding
-  { id: 't1', key: 'Hodina kódovania (Python/JS)', tags: ['tech', 'productivity'], xp: 50 },
-  { id: 't2', key: 'Vyrieš 1 LeetCode problém', tags: ['tech'], xp: 45 },
-  { id: 't3', key: 'Prečítaj si IT článok (Medium/Dev.to)', tags: ['tech', 'lifestyle'], xp: 20 },
-  { id: 't4', key: 'Zálohuj si dôležité súbory', tags: ['tech', 'productivity'], xp: 30 },
-  { id: 't5', key: 'Upratať plochu na počítači', tags: ['tech', 'productivity'], xp: 15 },
-  { id: 't6', key: 'Nakonfiguruj si nový Linux nástroj', tags: ['tech'], xp: 60 },
-  { id: 't7', key: 'Pozri si 1 tutoriál o programovaní', tags: ['tech'], xp: 35 },
+const RAW_AI_QUESTS = [
+  // Tech
+  "Napíš Python skript na automatizáciu aspoň 1 priečinka",
+  "Nainštaluj a otestuj novú Linux distribúciu vo virtuálke",
+  "Prečítaj si 2 články o najnovších AI modeloch na Medium",
+  "Vyčisti PC od zbytočných súborov a urob kompletnú zálohu",
+  "Sleduj 30 minút tutoriál k Reactu alebo Vite",
+  "Zisti, ako funguje Docker a vytvor svoj prvý kontajner",
+  "Vyskúšaj si prácu s novým API cez Postman",
   // Fitness
-  { id: 'f1', key: '100 kľukov', tags: ['fitness'], xp: 40 },
-  { id: 'f2', key: 'Choď do gymu (Leg day)', tags: ['fitness'], xp: 70 },
-  { id: 'f3', key: 'Choď do gymu (Upper body)', tags: ['fitness'], xp: 70 },
-  { id: 'f4', key: '10 minút strečing', tags: ['fitness', 'lifestyle'], xp: 20 },
-  { id: 'f5', key: 'Urob si 30 drepov', tags: ['fitness'], xp: 25 },
-  { id: 'f6', key: 'Zabehni 3 kilometre', tags: ['fitness', 'outdoor'], xp: 60 },
-  { id: 'f7', key: 'Vypi 3 litre vody', tags: ['fitness', 'lifestyle'], xp: 30 },
-  // Maker / 3D Print / Moto
-  { id: 'm1', key: 'Navrhni súčiastku vo Fusion 360', tags: ['maker', 'tech'], xp: 55 },
-  { id: 'm2', key: 'Vytlač 3D model', tags: ['maker'], xp: 40 },
-  { id: 'm3', key: 'Vyčisti a namaž reťaz na motorke', tags: ['maker', 'outdoor'], xp: 50 },
-  { id: 'm4', key: 'Kalibrácia 3D tlačiarne', tags: ['maker'], xp: 35 },
-  // Outdoor & Social
-  { id: 'o1', key: 'Urbex Fotka (Nové miesto)', tags: ['outdoor', 'creative'], xp: 60 },
-  { id: 'o2', key: 'Choď von na bicykel', tags: ['outdoor', 'fitness'], xp: 50 },
-  { id: 'o3', key: 'Stráv 30 minút na slnku bez mobilu', tags: ['outdoor', 'lifestyle'], xp: 30 },
-  { id: 's1', key: 'Napíš kamošovi, s ktorým si dlho nehovoril', tags: ['social'], xp: 25 },
-  { id: 's2', key: 'Choď von s kamošmi', tags: ['social'], xp: 45 },
-  // Lifestyle & Productivity
-  { id: 'l1', key: 'Studená sprcha (3 minúty)', tags: ['lifestyle', 'fitness'], xp: 35 },
-  { id: 'l2', key: 'Prečítaj 10 strán z knihy', tags: ['productivity', 'lifestyle'], xp: 20 },
-  { id: 'l3', key: 'Choď spať pred 23:00', tags: ['lifestyle', 'fitness'], xp: 40 },
-  { id: 'l4', key: 'Upratať si izbu', tags: ['lifestyle', 'productivity'], xp: 30 },
-  { id: 'l5', key: 'Skús meditovať 10 minút', tags: ['lifestyle'], xp: 25 },
-  { id: 'l6', key: '0 hodín na TikToku / Reals', tags: ['productivity', 'lifestyle'], xp: 50 },
-  { id: 'p1', key: 'Napíš si ciele na tento týždeň', tags: ['productivity'], xp: 30 },
-  { id: 'p2', key: 'Urob si úlohu do školy predčasne', tags: ['productivity'], xp: 50 },
+  "Choď do gymu a odmakaj si ťažký Leg day",
+  "Choď do gymu a odmakaj si Upper body tréning",
+  "Urob aspoň 50 kľukov naraz (alebo v 2 sériách)",
+  "Zabehni 5 kilometrov vonku v prírode",
+  "Daj si 15 minút poriadny celotelový strečing",
+  "Urob 100 drepov so správnou technikou",
+  "Daj si 3 série planku na maximum výdrže",
+  // Maker
+  "Navrhni vlastný funkčný držiak vo Fusion 360",
+  "Vytlač na 3D tlačiarni aspoň jeden diel z PETG",
+  "Premaž, vyčisti a dotiahni reťaz na motorke",
+  "Prekalibruj prvú vrstvu na svojej 3D tlačiarni",
+  "Urob drobnú údržbu na bicykli (tlak, brzdy, prehadzovačka)",
+  "Nájdi a stiahni si z Printables zaujímavý doplnok na stôl",
+  // Outdoor
+  "Zájdi na bicykli na Biely kríž alebo Kamzík",
+  "Nájdi nové opustené miesto v Bratislave (Urbex prieskum)",
+  "Urob 5 zaujímavých fotiek prírody a uprav ich v Lightroome",
+  "Choď na aspoň hodinovú prechádzku do lesa",
+  "Stráv vonku 40 minút úplne bez pozerania do mobilu",
+  // Lifestyle
+  "Daj si ľadovú sprchu na minimálne 2 minúty",
+  "Prečítaj si aspoň 15 strán z kvalitnej knihy",
+  "Žiadny TikTok, Reels ani Shorts na celých 24 hodín",
+  "Zaspi dnes pred 23:00 a spi aspoň 8 hodín",
+  "Sprav si úplný poriadok na pracovnom stole a v izbe",
+  "Napíš si presný zoznam úloh a priorít na zajtrajšok",
+  // Social
+  "Zavolaj alebo napíš kamošovi a dohodnite si stretnutie",
+  "Vezmi kamošov na bicykle alebo von do mesta",
+  "Zdieľaj svoj fitness progres alebo fotku na Insta/BeReal"
 ];
 
 export default function App() {
-  const [lang, setLang] = useState('sk');
-  const t = DICTIONARY[lang];
+  const t = DICTIONARY.sk;
   
   const [activeTab, setActiveTab] = useState('home');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -172,11 +122,12 @@ export default function App() {
   const [selectedInterests, setSelectedInterests] = useState([]);
   
   const [pfp, setPfp] = useState(null);
-  const [userStats, setUserStats] = useState({ xp: 4550, level: 1, streak: 12, questsDone: 1 });
+  
+  // Tu zaciname od 0 level a 0 XP
+  const [userStats, setUserStats] = useState({ xp: 0, level: 1, streak: 0, questsDone: 0 });
   const [activeSkin, setActiveSkin] = useState(SKINS[0]);
   
   const pfpInputRef = useRef(null);
-  const questPhotoInputRef = useRef(null);
 
   const [quests, setQuests] = useState([]);
   const [history, setHistory] = useState([]);
@@ -185,25 +136,29 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isolatedQuestId, setIsolatedQuestId] = useState(null);
   const [selectedQuestToComplete, setSelectedQuestToComplete] = useState(null);
+  const [challengeModal, setChallengeModal] = useState({ open: false, friend: null });
 
   useEffect(() => {
     setUserStats(prev => ({ ...prev, level: Math.floor(prev.xp / 1000) + 1 }));
   }, [userStats.xp]);
 
   useEffect(() => {
-    if (activeSkin.id === 'default' && userStats.level >= 5) {
-      setActiveSkin(SKINS.find(s => s.id === 'cyberpunk') || SKINS[0]);
+    // Skin sa nemeni nasilu ak ma nizsi level, ale fallbackne na zakladny, keby to presvihol
+    if (userStats.level < activeSkin.unlockLevel) {
+      setActiveSkin(SKINS[0]);
     }
-  }, [userStats.level]);
+  }, [userStats.level, activeSkin]);
 
-  const generateQuestsForUser = (interests) => {
-    let pool = MASTER_QUEST_LIBRARY;
-    if (interests.length > 0) {
-      pool = MASTER_QUEST_LIBRARY.filter(q => q.tags.some(tag => interests.includes(tag)));
-      if (pool.length < 4) pool = MASTER_QUEST_LIBRARY;
-    }
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 4);
+  // AI-like generation - nahodny výber + náhodné priradenie XP od 30 do 85
+  const generateAIQuests = () => {
+    const shuffled = [...RAW_AI_QUESTS].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 4);
+    
+    return selected.map(qText => ({
+      id: Date.now().toString() + Math.random(),
+      key: qText,
+      xp: Math.floor(Math.random() * (85 - 30 + 1)) + 30
+    }));
   };
 
   const handleGoogleLogin = () => {
@@ -215,7 +170,7 @@ export default function App() {
   };
 
   const finishOnboarding = () => {
-    setQuests(generateQuestsForUser(selectedInterests));
+    setQuests(generateAIQuests());
     setShowOnboarding(false);
     setIsLoggedIn(true);
   };
@@ -255,6 +210,19 @@ export default function App() {
     }
   };
 
+  const handleShowFavorite = (instanceId) => {
+    setIsFavoritesOpen(false);
+    setActiveTab('history');
+    setIsolatedQuestId(instanceId);
+    setSearchQuery('');
+  };
+
+  const handlePfpUpload = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setPfp(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
   const cText = `text-${activeSkin.color}`;
   const cBorder = `border-${activeSkin.color}`;
   const cBg = `bg-${activeSkin.color}`;
@@ -268,8 +236,9 @@ export default function App() {
           <p className="text-neutral-400 mb-12">Level up in real life.</p>
           <button onClick={handleGoogleLogin} className="w-full bg-white text-black font-medium py-4 px-8 rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform mb-4">
             {isLoggingIn ? <RefreshCw className="animate-spin text-neutral-500" /> : <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" />}
-            {isLoggingIn ? (lang === 'sk' ? "Pripájam..." : "Connecting...") : t.signIn}
+            {isLoggingIn ? "Pripájam..." : t.signIn}
           </button>
+          <p className="text-xs text-neutral-600 text-center">Tlačidlo pošle skutočný Google login request, <br/>keď zapojíme Firebase backend v PC.</p>
         </motion.div>
       </div>
     );
@@ -309,16 +278,16 @@ export default function App() {
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 pb-24">
       <div className="flex justify-between items-end border-b border-neutral-800 pb-2">
         <h2 className={`text-2xl font-serif ${cText}`}>{t.home}</h2>
-        <button onClick={() => setQuests(generateQuestsForUser(selectedInterests))} className={`text-sm text-neutral-400 flex items-center gap-1 active:${cText} transition-colors`}>
+        <button onClick={() => setQuests(generateAIQuests())} className={`text-sm text-neutral-400 flex items-center gap-1 active:${cText} transition-colors`}>
           <RefreshCw size={14} /> {t.refresh}
         </button>
       </div>
       <div className="space-y-4">
-        {quests.length === 0 && <p className="text-neutral-500 text-center py-10">Všetky questy splnené. Skús obnoviť zoznam!</p>}
+        {quests.length === 0 && <p className="text-neutral-500 text-center py-10">Všetky questy splnené. Nechaj si vygenerovať nové!</p>}
         {quests.map(q => (
           <motion.div whileTap={{ scale: 0.98 }} key={q.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex justify-between items-center shadow-lg">
-            <span className="font-medium text-white">{q.name || q.key}</span>
-            <div className="flex items-center gap-4">
+            <span className="font-medium text-white max-w-[70%]">{q.name || q.key}</span>
+            <div className="flex items-center gap-4 shrink-0">
               <span className="text-xs text-neutral-400">+{q.xp} XP</span>
               <button onClick={() => setSelectedQuestToComplete(q)} className={`w-8 h-8 rounded-full border-2 ${cBorder} active:bg-${activeSkin.color}/20 transition-colors shrink-0`} />
             </div>
@@ -394,6 +363,7 @@ export default function App() {
       <AnimatePresence mode="wait">
         {activeTab === 'home' && <RenderWrapper key="home">{renderHome()}</RenderWrapper>}
         {activeTab === 'history' && <RenderWrapper key="history">{renderHistory()}</RenderWrapper>}
+        
         {activeTab === 'friends' && (
           <RenderWrapper key="friends">
             <div className="space-y-6 pb-24">
@@ -407,23 +377,24 @@ export default function App() {
                       </div>
                       <span className="font-medium text-white">{name}</span>
                     </div>
-                    <button className={`${cText} p-2 bg-${activeSkin.color}/10 rounded-lg active:scale-95 transition-transform`}><Swords size={18} /></button>
+                    <button onClick={() => setChallengeModal({ open: true, friend: name })} className={`${cText} p-2 bg-${activeSkin.color}/10 rounded-lg active:scale-95 transition-transform`}><Swords size={18} /></button>
                   </div>
                 ))}
               </div>
             </div>
           </RenderWrapper>
         )}
+        
         {activeTab === 'leaderboard' && (
           <RenderWrapper key="leaderboard">
             <div className="space-y-6 pb-24">
               <h2 className={`text-2xl font-serif ${cText}`}>{t.leaderboard}</h2>
               <div className="space-y-3">
                 {[
-                  { name: 'Rišo', xp: 51200 },
-                  { name: 'Samo', xp: 45000 },
+                  { name: 'Rišo', xp: 4200 },
+                  { name: 'Samo', xp: 2150 },
                   { name: `Maxim (${t.you})`, xp: userStats.xp, isMe: true },
-                  { name: 'Tomáš', xp: 3200 }
+                  { name: 'Tomáš', xp: 850 }
                 ].sort((a,b) => b.xp - a.xp).map((user, idx) => (
                   <div key={idx} className={`bg-neutral-900 border ${user.isMe ? cBorder : 'border-neutral-800'} rounded-xl p-4 flex justify-between items-center shadow-lg`}>
                     <div className="flex items-center gap-4">
@@ -440,20 +411,21 @@ export default function App() {
             </div>
           </RenderWrapper>
         )}
+        
         {activeTab === 'custom' && (
           <RenderWrapper key="custom">
             <div className="space-y-6 pb-24">
                <h2 className={`text-2xl font-serif ${cText}`}>{t.newQuest}</h2>
                <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4 shadow-lg">
-                 <input type="text" placeholder={t.questName} className={`w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-white focus:${cBorder} outline-none transition-colors`} id="customQName"/>
+                 <input type="text" placeholder={t.questName} className={`w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-white focus:outline-none focus:border-${activeSkin.color} transition-colors`} id="customQName"/>
                  <button onClick={() => {
                      const name = document.getElementById('customQName').value || 'Custom Quest';
-                     const randomXp = Math.floor(Math.random() * (60 - 15 + 1)) + 15;
+                     const randomXp = Math.floor(Math.random() * (85 - 30 + 1)) + 30;
                      setQuests([{ id: Date.now().toString(), key: name, xp: randomXp, custom: true }, ...quests]);
                      setActiveTab('home');
                    }}
-                   className={`w-full text-white py-3 rounded-lg font-medium active:scale-95 transition-transform shadow-lg shadow-${activeSkin.color}/20`}
-                   style={{ backgroundColor: activeSkin.hex }}
+                   className={`w-full text-black py-3 rounded-lg font-medium active:scale-95 transition-transform shadow-lg`}
+                   style={{ backgroundColor: activeSkin.hex, boxShadow: `0 0 15px ${activeSkin.hex}40` }}
                  >
                    {t.addQuest}
                  </button>
@@ -497,18 +469,6 @@ export default function App() {
                 <span className={`text-2xl font-medium ${cText}`}>{userStats.streak}</span>
               </div>
             </div>
-            
-            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex justify-between items-center mb-8">
-              <span className="text-neutral-300">{t.lang}</span>
-              <select 
-                value={lang} 
-                onChange={(e) => setLang(e.target.value)}
-                className={`bg-neutral-950 border border-neutral-700 ${cText} rounded-lg px-3 py-1 outline-none focus:${cBorder}`}
-              >
-                <option value="sk">Slovenčina</option>
-                <option value="en">English</option>
-              </select>
-            </div>
 
             <div className="mb-8 space-y-3">
               <h3 className="text-neutral-400 font-medium mb-4">{t.skins}</h3>
@@ -528,7 +488,7 @@ export default function App() {
               ))}
             </div>
 
-            <button onClick={() => { setIsLoggedIn(false); setShowOnboarding(false); }} className="mt-auto mb-8 w-full border border-red-900/30 bg-red-900/10 text-red-500 py-4 rounded-xl flex justify-center items-center gap-2 font-medium active:scale-95 transition-transform">
+            <button onClick={() => { setIsLoggedIn(false); setShowOnboarding(false); setUserStats({ xp: 0, level: 1, streak: 0, questsDone: 0 }); setActiveSkin(SKINS[0]); setHistory([]); }} className="mt-auto mb-8 w-full border border-red-900/30 bg-red-900/10 text-red-500 py-4 rounded-xl flex justify-center items-center gap-2 font-medium active:scale-95 transition-transform">
               <LogOut size={18} />
               {t.signOut}
             </button>
@@ -564,10 +524,34 @@ export default function App() {
           <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }} className="fixed inset-0 bg-black/80 z-50 flex items-end p-4 pb-24 backdrop-blur-sm">
             <div className="bg-neutral-900 w-full rounded-3xl p-6 border border-neutral-800 space-y-4 shadow-2xl">
               <h3 className="text-xl text-white font-medium text-center mb-6">{selectedQuestToComplete.key || selectedQuestToComplete.name}</h3>
-              <button onClick={() => completeQuest()} className={`w-full py-4 rounded-xl text-white font-medium active:scale-95 transition-transform shadow-lg shadow-${activeSkin.color}/20`} style={{ backgroundColor: activeSkin.hex }}>
+              <button onClick={() => completeQuest()} className={`w-full py-4 rounded-xl text-black font-medium active:scale-95 transition-transform shadow-lg`} style={{ backgroundColor: activeSkin.hex, boxShadow: `0 0 15px ${activeSkin.hex}40` }}>
                 {t.completeQuest}
               </button>
               <button onClick={() => setSelectedQuestToComplete(null)} className="w-full py-2 text-neutral-500 text-sm mt-2">Zrušiť</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {challengeModal.open && (
+          <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }} className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-neutral-900 w-full rounded-3xl p-6 border border-neutral-800 space-y-4 shadow-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-xl font-serif ${cText}`}>{t.challenge} {challengeModal.friend}</h3>
+                <button onClick={() => setChallengeModal({open: false, friend: null})}><X size={20} className="text-neutral-500"/></button>
+              </div>
+              
+              <textarea placeholder={t.customMessage} className={`w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-white h-24 resize-none focus:outline-none focus:${cBorder} transition-colors`}></textarea>
+              
+              <div className="flex gap-2">
+                <button className={`flex-1 bg-neutral-950 text-neutral-300 py-3 rounded-lg text-sm border border-neutral-800 focus:outline-none focus:border-${activeSkin.color} focus:${cText} focus:bg-${activeSkin.color}/10 transition-colors`}>{t.for24h}</button>
+                <button className={`flex-1 bg-neutral-950 text-neutral-300 py-3 rounded-lg text-sm border border-neutral-800 focus:outline-none focus:border-${activeSkin.color} focus:${cText} focus:bg-${activeSkin.color}/10 transition-colors`}>{t.forWeekend}</button>
+              </div>
+              
+              <button onClick={() => { alert(t.challengeSent); setChallengeModal({open: false, friend: null}); }} className="w-full text-black py-4 rounded-xl font-medium mt-4 active:scale-95 transition-transform" style={{ backgroundColor: activeSkin.hex, boxShadow: `0 0 15px ${activeSkin.hex}40` }}>
+                {t.sendChallenge}
+              </button>
             </div>
           </motion.div>
         )}
@@ -576,7 +560,7 @@ export default function App() {
       <div className="fixed bottom-0 left-0 right-0 h-20 bg-neutral-950/90 backdrop-blur-xl border-t border-neutral-900 flex justify-around items-center px-4 z-40">
         <button onClick={() => setActiveTab('home')} className={`p-3 transition-colors ${activeTab === 'home' ? cText : 'text-neutral-600'}`}><Home size={24} /></button>
         <button onClick={() => setActiveTab('friends')} className={`p-3 transition-colors ${activeTab === 'friends' ? cText : 'text-neutral-600'}`}><Users size={24} /></button>
-        <button onClick={() => setActiveTab('custom')} className={`w-14 h-14 rounded-full flex items-center justify-center text-black -translate-y-5 shadow-[0_0_25px_rgba(255,255,255,0.2)] active:scale-95 transition-transform`} style={{ backgroundColor: activeSkin.hex }}><Plus size={30} /></button>
+        <button onClick={() => setActiveTab('custom')} className={`w-14 h-14 rounded-full flex items-center justify-center text-black -translate-y-5 active:scale-95 transition-transform`} style={{ backgroundColor: activeSkin.hex, boxShadow: `0 0 25px ${activeSkin.hex}60` }}><Plus size={30} /></button>
         <button onClick={() => setActiveTab('leaderboard')} className={`p-3 transition-colors ${activeTab === 'leaderboard' ? cText : 'text-neutral-600'}`}><Globe size={24} /></button>
         <button onClick={() => setActiveTab('history')} className={`p-3 transition-colors ${activeTab === 'history' ? cText : 'text-neutral-600'}`}><CheckCircle size={24} /></button>
       </div>
