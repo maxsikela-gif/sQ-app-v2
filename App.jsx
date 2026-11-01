@@ -46,12 +46,71 @@ const DICTIONARY = {
     q_moto: "Údržba motorky (Reťaz/Olej)",
     q_read: "Prečítať 10 strán knihy",
     q_code: "Hodina kódovania",
-    q_pushups: "100 kľukov"
+    q_pushups: "100 kľukov",
+    skins: "Vzhľad apky (Skiny)",
+    unlocksAt: "Odomkne lvl"
+  },
+  en: {
+    home: "Quests",
+    newQuest: "New Quest",
+    leaderboard: "Leaderboard",
+    friends: "Friends",
+    history: "History",
+    refresh: "Refresh quests",
+    profile: "Your Profile",
+    change: "CHANGE",
+    totalXp: "Total XP",
+    lvl: "Lvl",
+    questsDone: "Quests Done",
+    dailyStreak: "Daily Streak",
+    lang: "Language / Jazyk",
+    signOut: "Sign Out",
+    signIn: "Sign In",
+    uploadPhoto: "Upload Photo (+5 XP)",
+    skipPhoto: "Skip (No photo)",
+    completeQuest: "Complete Quest",
+    searchHistory: "Search history...",
+    noHistory: "No completed quests yet.",
+    attachedPhoto: "Attached photo",
+    favorites: "Favorite Quests",
+    show: "Show",
+    isolatedView: "Showing specific quest",
+    cancelFilter: "Cancel filter",
+    you: "You",
+    challenge: "Challenge Friend",
+    customMessage: "Your message to friend...",
+    for24h: "For 24 hours",
+    forWeekend: "For this weekend",
+    sendChallenge: "Send Challenge",
+    challengeSent: "Challenge Sent!",
+    questName: "Name of your quest...",
+    aiEval: "AI Evaluation",
+    addQuest: "Add Quest",
+    days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    q_coldShower: "Cold Shower",
+    q_urbex: "Urbex Photo",
+    q_3dPrint: "3D Print - Fusion Model",
+    q_moto: "Motorcycle Maintenance",
+    q_read: "Read 10 pages",
+    q_code: "One hour of coding",
+    q_pushups: "100 Pushups",
+    skins: "App Skins",
+    unlocksAt: "Unlocks lvl"
   }
 };
 
+const SKINS = [
+  { id: 'default', name: 'Základný Temný', unlockLevel: 1, gradient: 'from-sky-600 to-sky-400', color: 'sky-400', hex: '#38bdf8' },
+  { id: 'cyberpunk', name: 'Cyberpunk Neon', unlockLevel: 5, gradient: 'from-fuchsia-600 to-pink-400', color: 'pink-400', hex: '#f472b6' },
+  { id: 'oled', name: 'OLED Pitch Black', unlockLevel: 10, gradient: 'from-neutral-700 to-neutral-500', color: 'neutral-300', hex: '#d4d4d4' },
+  { id: 'sunset', name: 'Sunset Gold', unlockLevel: 15, gradient: 'from-orange-600 to-yellow-400', color: 'yellow-400', hex: '#facc15' },
+  { id: 'emerald', name: 'Toxic Emerald', unlockLevel: 25, gradient: 'from-emerald-600 to-green-400', color: 'emerald-400', hex: '#34d399' },
+];
+
 export default function App() {
-  const t = DICTIONARY.sk;
+  const [lang, setLang] = useState('sk');
+  const t = DICTIONARY[lang];
+  
   const [activeTab, setActiveTab] = useState('home');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
@@ -61,6 +120,7 @@ export default function App() {
   
   const [pfp, setPfp] = useState(null);
   const [userStats, setUserStats] = useState({ xp: 4550, level: 1, streak: 12, questsDone: 1 });
+  const [activeSkin, setActiveSkin] = useState(SKINS[0]);
   
   const pfpInputRef = useRef(null);
   const questPhotoInputRef = useRef(null);
@@ -81,6 +141,10 @@ export default function App() {
   const [isolatedQuestId, setIsolatedQuestId] = useState(null);
   const [selectedQuestToComplete, setSelectedQuestToComplete] = useState(null);
   const [challengeModal, setChallengeModal] = useState({ open: false, friend: null });
+
+  React.useEffect(() => {
+    setUserStats(prev => ({ ...prev, level: Math.floor(prev.xp / 1000) + 1 }));
+  }, [userStats.xp]);
 
   const handlePfpUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -107,7 +171,6 @@ export default function App() {
             {isLoggingIn ? <RefreshCw className="animate-spin text-neutral-500" /> : <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" />}
             {isLoggingIn ? "Pripájam..." : "Prihlásiť sa cez Google"}
           </button>
-          <p className="text-xs text-neutral-600 text-center">Reálne overenie vyžaduje backend. <br/>Teraz funguje ako demo kliknutie.</p>
         </motion.div>
       </div>
     );
@@ -130,7 +193,12 @@ export default function App() {
     setHistory([historyItem, ...history]);
     setUserStats(prev => ({ ...prev, xp: prev.xp + finalXp, questsDone: prev.questsDone + 1 }));
 
-    if (!isCustom) setQuests(quests.filter(q => q.id !== selectedQuestToComplete.id));
+    if (!isCustom) {
+      setQuests(quests.filter(q => q.id !== selectedQuestToComplete.id));
+    } else {
+      setCustomQuests(customQuests.filter(q => q.id !== selectedQuestToComplete.id));
+    }
+    
     setSelectedQuestToComplete(null);
   };
 
@@ -149,11 +217,15 @@ export default function App() {
     setSearchQuery('');
   };
 
+  const cText = `text-${activeSkin.color}`;
+  const cBorder = `border-${activeSkin.color}`;
+  const cBg = `bg-${activeSkin.color}`;
+
   const renderHome = () => (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 pb-24">
       <div className="flex justify-between items-end border-b border-neutral-800 pb-2">
-        <h2 className="text-2xl font-serif text-sky-400">{t.home}</h2>
-        <button onClick={() => setQuests([...defaultQuests].sort(() => 0.5 - Math.random()))} className="text-sm text-neutral-400 flex items-center gap-1 active:text-sky-400 transition-colors">
+        <h2 className={`text-2xl font-serif ${cText}`}>{t.home}</h2>
+        <button onClick={() => setQuests([...defaultQuests].sort(() => 0.5 - Math.random()))} className={`text-sm text-neutral-400 flex items-center gap-1 active:${cText} transition-colors`}>
           <RefreshCw size={14} /> {t.refresh}
         </button>
       </div>
@@ -163,19 +235,19 @@ export default function App() {
             <span className="font-medium text-white">{t[q.key]}</span>
             <div className="flex items-center gap-4">
               <span className="text-xs text-neutral-400">+{q.xp} XP</span>
-              <button onClick={() => setSelectedQuestToComplete(q)} className="w-8 h-8 rounded-full border-2 border-sky-400 active:bg-sky-400/20 transition-colors" />
+              <button onClick={() => setSelectedQuestToComplete(q)} className={`w-8 h-8 rounded-full border-2 ${cBorder} active:bg-${activeSkin.color}/20 transition-colors`} />
             </div>
           </motion.div>
         ))}
         {customQuests.map(q => (
           <motion.div whileTap={{ scale: 0.98 }} key={q.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col gap-3 shadow-lg">
             <div className="flex justify-between items-center">
-              <span className="font-medium text-sky-400">{q.name}</span>
-              <span className="text-xs text-sky-400">+{q.xp} XP / den</span>
+              <span className={`font-medium ${cText}`}>{q.name}</span>
+              <span className={`text-xs ${cText}`}>+{q.xp} XP / den</span>
             </div>
             <div className="flex gap-2">
               {q.days.map((day, idx) => (
-                <div key={idx} onClick={() => setSelectedQuestToComplete({...q, custom: true})} className="w-8 h-8 rounded-full border border-neutral-700 flex items-center justify-center text-xs text-neutral-400 active:border-sky-400 cursor-pointer">
+                <div key={idx} onClick={() => setSelectedQuestToComplete({...q, custom: true})} className={`w-8 h-8 rounded-full border border-neutral-700 flex items-center justify-center text-xs text-neutral-400 active:${cBorder} cursor-pointer`}>
                   {day}
                 </div>
               ))}
@@ -196,15 +268,15 @@ export default function App() {
 
     return (
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 pb-24">
-        <h2 className="text-2xl font-serif text-sky-400">{t.history}</h2>
+        <h2 className={`text-2xl font-serif ${cText}`}>{t.history}</h2>
         {!isolatedQuestId ? (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
-            <input type="text" placeholder={t.searchHistory} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-sky-400 transition-colors" />
+            <input type="text" placeholder={t.searchHistory} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:${cBorder} transition-colors`} />
           </div>
         ) : (
-          <div className="bg-sky-400/10 border border-sky-400/30 rounded-xl p-3 flex justify-between items-center">
-            <span className="text-sm text-sky-400">{t.isolatedView}</span>
+          <div className={`bg-${activeSkin.color}/10 border border-${activeSkin.color}/30 rounded-xl p-3 flex justify-between items-center`}>
+            <span className={`text-sm ${cText}`}>{t.isolatedView}</span>
             <button onClick={() => setIsolatedQuestId(null)} className="text-sm text-neutral-300 hover:text-white bg-neutral-800 px-3 py-1 rounded-lg">{t.cancelFilter}</button>
           </div>
         )}
@@ -220,7 +292,7 @@ export default function App() {
                     <p className="text-xs text-neutral-500">{h.timestamp} • +{h.xp} XP</p>
                   </div>
                   <button onClick={() => toggleFavorite(h)}>
-                    <Star size={20} className={favorites.some(f => f.instanceId === h.instanceId) ? "fill-sky-400 text-sky-400" : "text-neutral-600"} />
+                    <Star size={20} className={favorites.some(f => f.instanceId === h.instanceId) ? `fill-${activeSkin.color} ${cText}` : "text-neutral-600"} />
                   </button>
                 </div>
               </div>
@@ -235,7 +307,7 @@ export default function App() {
     <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans px-6 pt-12 relative overflow-hidden">
       <div className="flex justify-between items-center mb-10 relative z-10">
         <button onClick={() => setIsFavoritesOpen(true)} className="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center bg-neutral-900 shadow-lg active:scale-95 transition-transform">
-          <Trophy size={18} className="text-sky-400" />
+          <Trophy size={18} className={cText} />
         </button>
         <div className="flex flex-col items-center">
           <h1 className="text-2xl font-serif italic text-white tracking-wider">lvl <span className="text-4xl not-italic ml-1">{userStats.level}</span></h1>
@@ -246,7 +318,7 @@ export default function App() {
       </div>
 
       <div className="w-full bg-neutral-900 h-3 rounded-full mb-10 relative z-10 overflow-hidden border border-neutral-800 shadow-inner">
-        <motion.div initial={{ width: 0 }} animate={{ width: `${(userStats.xp / 7000) * 100}%` }} transition={{ duration: 1 }} className="bg-gradient-to-r from-sky-600 to-sky-400 h-full rounded-full" />
+        <motion.div initial={{ width: 0 }} animate={{ width: `${((userStats.xp % 1000) / 1000) * 100}%` }} transition={{ duration: 1 }} className={`bg-gradient-to-r ${activeSkin.gradient} h-full rounded-full`} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -255,7 +327,7 @@ export default function App() {
         {activeTab === 'friends' && (
           <RenderWrapper key="friends">
             <div className="space-y-6 pb-24">
-              <h2 className="text-2xl font-serif text-sky-400">{t.friends}</h2>
+              <h2 className={`text-2xl font-serif ${cText}`}>{t.friends}</h2>
               <div className="space-y-3">
                 {['Rišo', 'Samo', 'Tomáš'].map((name, i) => (
                   <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex justify-between items-center shadow-lg">
@@ -265,7 +337,7 @@ export default function App() {
                       </div>
                       <span className="font-medium text-white">{name}</span>
                     </div>
-                    <button className="text-sky-400 p-2 bg-sky-400/10 rounded-lg active:scale-95 transition-transform"><Swords size={18} /></button>
+                    <button className={`${cText} p-2 bg-${activeSkin.color}/10 rounded-lg active:scale-95 transition-transform`}><Swords size={18} /></button>
                   </div>
                 ))}
               </div>
@@ -275,7 +347,7 @@ export default function App() {
         {activeTab === 'leaderboard' && (
           <RenderWrapper key="leaderboard">
             <div className="space-y-6 pb-24">
-              <h2 className="text-2xl font-serif text-sky-400">{t.leaderboard}</h2>
+              <h2 className={`text-2xl font-serif ${cText}`}>{t.leaderboard}</h2>
               <div className="space-y-3">
                 {[
                   { name: 'Rišo', xp: 51200 },
@@ -283,7 +355,7 @@ export default function App() {
                   { name: `Maxim (${t.you})`, xp: userStats.xp, isMe: true },
                   { name: 'Tomáš', xp: 3200 }
                 ].sort((a,b) => b.xp - a.xp).map((user, idx) => (
-                  <div key={idx} className={`bg-neutral-900 border ${user.isMe ? 'border-sky-400' : 'border-neutral-800'} rounded-xl p-4 flex justify-between items-center shadow-lg`}>
+                  <div key={idx} className={`bg-neutral-900 border ${user.isMe ? cBorder : 'border-neutral-800'} rounded-xl p-4 flex justify-between items-center shadow-lg`}>
                     <div className="flex items-center gap-4">
                       <span className="text-neutral-500 font-serif">#{idx + 1}</span>
                       <div className="w-8 h-8 rounded-full bg-neutral-800 overflow-hidden flex items-center justify-center">
@@ -291,7 +363,7 @@ export default function App() {
                       </div>
                       <span className={user.isMe ? "font-bold text-white" : "text-neutral-300"}>{user.name}</span>
                     </div>
-                    <span className="text-sm text-sky-400">{user.xp} XP</span>
+                    <span className={`text-sm ${cText}`}>{user.xp} XP</span>
                   </div>
                 ))}
               </div>
@@ -301,15 +373,17 @@ export default function App() {
         {activeTab === 'custom' && (
           <RenderWrapper key="custom">
             <div className="space-y-6 pb-24">
-               <h2 className="text-2xl font-serif text-sky-400">{t.newQuest}</h2>
+               <h2 className={`text-2xl font-serif ${cText}`}>{t.newQuest}</h2>
                <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4 shadow-lg">
-                 <input type="text" placeholder={t.questName} className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-white focus:border-sky-400 outline-none transition-colors" id="customQName"/>
+                 <input type="text" placeholder={t.questName} className={`w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-white focus:${cBorder} outline-none transition-colors`} id="customQName"/>
                  <button onClick={() => {
                      const name = document.getElementById('customQName').value || 'Custom Quest';
-                     setCustomQuests([{ id: Date.now().toString(), name, xp: 30, days: ["Po", "St", "Pi"] }, ...customQuests]);
+                     const randomXp = Math.floor(Math.random() * (60 - 15 + 1)) + 15;
+                     setCustomQuests([{ id: Date.now().toString(), name, xp: randomXp, days: ["Po", "St", "Pi"] }, ...customQuests]);
                      setActiveTab('home');
                    }}
-                   className="w-full bg-sky-500 text-white py-3 rounded-lg font-medium active:scale-95 transition-transform shadow-lg shadow-sky-500/20"
+                   className={`w-full text-white py-3 rounded-lg font-medium active:scale-95 transition-transform shadow-lg shadow-${activeSkin.color}/20`}
+                   style={{ backgroundColor: activeSkin.hex }}
                  >
                    {t.addQuest}
                  </button>
@@ -323,7 +397,7 @@ export default function App() {
         {isProfileOpen && (
           <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }} className="fixed inset-0 z-50 bg-neutral-950 flex flex-col p-6 overflow-y-auto">
             <div className="flex justify-between items-center mb-10 mt-4">
-              <h2 className="text-3xl font-serif text-sky-400">{t.profile}</h2>
+              <h2 className={`text-3xl font-serif ${cText}`}>{t.profile}</h2>
               <button onClick={() => setIsProfileOpen(false)}><X className="text-neutral-400" size={32}/></button>
             </div>
             <div className="flex flex-col items-center mb-10 relative group">
@@ -338,7 +412,7 @@ export default function App() {
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex flex-col items-center">
                 <span className="text-xs text-neutral-500 mb-1">{t.totalXp}</span>
-                <span className="text-2xl font-medium text-sky-400">{userStats.xp}</span>
+                <span className={`text-2xl font-medium ${cText}`}>{userStats.xp}</span>
               </div>
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex flex-col items-center">
                 <span className="text-xs text-neutral-500 mb-1">{t.lvl}</span>
@@ -350,12 +424,43 @@ export default function App() {
               </div>
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex flex-col items-center">
                 <span className="text-xs text-neutral-500 mb-1">{t.dailyStreak}</span>
-                <span className="text-2xl font-medium text-sky-400">{userStats.streak}</span>
+                <span className={`text-2xl font-medium ${cText}`}>{userStats.streak}</span>
               </div>
             </div>
-            <button onClick={() => setIsLoggedIn(!isLoggedIn)} className="mt-auto mb-8 w-full border border-red-900/30 bg-red-900/10 text-red-500 py-4 rounded-xl flex justify-center items-center gap-2 font-medium">
+            
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex justify-between items-center mb-8">
+              <span className="text-neutral-300">{t.lang}</span>
+              <select 
+                value={lang} 
+                onChange={(e) => setLang(e.target.value)}
+                className={`bg-neutral-950 border border-neutral-700 ${cText} rounded-lg px-3 py-1 outline-none focus:${cBorder}`}
+              >
+                <option value="sk">Slovenčina</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+
+            <div className="mb-8 space-y-3">
+              <h3 className="text-neutral-400 font-medium mb-4">{t.skins}</h3>
+              {SKINS.map(skin => (
+                <button 
+                  key={skin.id}
+                  disabled={userStats.level < skin.unlockLevel}
+                  onClick={() => setActiveSkin(skin)}
+                  className={`w-full p-4 rounded-xl flex items-center justify-between border ${activeSkin.id === skin.id ? cBorder + ' bg-neutral-900' : 'border-neutral-800 bg-neutral-900/50'} ${userStats.level < skin.unlockLevel ? 'opacity-50 grayscale' : 'active:scale-95 transition-all'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${skin.gradient}`} />
+                    <span className={userStats.level < skin.unlockLevel ? "text-neutral-500" : "text-white"}>{skin.name}</span>
+                  </div>
+                  {userStats.level < skin.unlockLevel && <span className="text-xs text-neutral-500">{t.unlocksAt} {skin.unlockLevel}</span>}
+                </button>
+              ))}
+            </div>
+
+            <button onClick={() => setIsLoggedIn(false)} className="mt-auto mb-8 w-full border border-red-900/30 bg-red-900/10 text-red-500 py-4 rounded-xl flex justify-center items-center gap-2 font-medium">
               <LogOut size={18} />
-              {isLoggedIn ? t.signOut : t.signIn}
+              {t.signOut}
             </button>
           </motion.div>
         )}
@@ -365,7 +470,7 @@ export default function App() {
         {isFavoritesOpen && (
           <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }} className="fixed inset-0 z-50 bg-neutral-950 flex flex-col p-6">
             <div className="flex justify-between items-center mb-8 mt-4">
-              <h2 className="text-2xl font-serif text-sky-400">{t.favorites}</h2>
+              <h2 className={`text-2xl font-serif ${cText}`}>{t.favorites}</h2>
               <button onClick={() => setIsFavoritesOpen(false)}><X className="text-neutral-400" size={28}/></button>
             </div>
             <div className="space-y-4 overflow-y-auto">
@@ -376,7 +481,7 @@ export default function App() {
                     <h3 className="font-medium text-white">{f.name}</h3>
                     <p className="text-xs text-neutral-500">{f.timestamp}</p>
                   </div>
-                  <button onClick={() => handleShowFavorite(f.instanceId)} className="bg-sky-400/20 text-sky-400 px-4 py-1.5 rounded-lg text-sm active:scale-95 transition-transform">{t.show}</button>
+                  <button onClick={() => handleShowFavorite(f.instanceId)} className={`bg-${activeSkin.color}/20 ${cText} px-4 py-1.5 rounded-lg text-sm active:scale-95 transition-transform`}>{t.show}</button>
                 </div>
               ))}
             </div>
@@ -389,7 +494,7 @@ export default function App() {
           <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }} className="fixed inset-0 bg-black/80 z-50 flex items-end p-4 pb-24 backdrop-blur-sm">
             <div className="bg-neutral-900 w-full rounded-3xl p-6 border border-neutral-800 space-y-4 shadow-2xl">
               <h3 className="text-xl text-white font-medium text-center mb-6">{selectedQuestToComplete.custom ? selectedQuestToComplete.name : t[selectedQuestToComplete.key]}</h3>
-              <button onClick={() => completeQuest()} className="w-full py-4 rounded-xl bg-sky-500 text-white font-medium active:scale-95 transition-transform shadow-lg shadow-sky-500/20">
+              <button onClick={() => completeQuest()} className={`w-full py-4 rounded-xl text-white font-medium active:scale-95 transition-transform shadow-lg shadow-${activeSkin.color}/20`} style={{ backgroundColor: activeSkin.hex }}>
                 {t.completeQuest}
               </button>
               <button onClick={() => setSelectedQuestToComplete(null)} className="w-full py-2 text-neutral-500 text-sm mt-2">Zrušiť</button>
@@ -399,11 +504,11 @@ export default function App() {
       </AnimatePresence>
 
       <div className="fixed bottom-0 left-0 right-0 h-20 bg-neutral-950/90 backdrop-blur-xl border-t border-neutral-900 flex justify-around items-center px-4 z-40">
-        <button onClick={() => setActiveTab('home')} className={`p-3 transition-colors ${activeTab === 'home' ? 'text-sky-400' : 'text-neutral-600'}`}><Home size={24} /></button>
-        <button onClick={() => setActiveTab('friends')} className={`p-3 transition-colors ${activeTab === 'friends' ? 'text-sky-400' : 'text-neutral-600'}`}><Users size={24} /></button>
-        <button onClick={() => setActiveTab('custom')} className="w-14 h-14 rounded-full bg-sky-500 flex items-center justify-center text-white -translate-y-5 shadow-[0_0_25px_rgba(56,189,248,0.4)] active:scale-95 transition-transform"><Plus size={30} /></button>
-        <button onClick={() => setActiveTab('leaderboard')} className={`p-3 transition-colors ${activeTab === 'leaderboard' ? 'text-sky-400' : 'text-neutral-600'}`}><Globe size={24} /></button>
-        <button onClick={() => setActiveTab('history')} className={`p-3 transition-colors ${activeTab === 'history' ? 'text-sky-400' : 'text-neutral-600'}`}><CheckCircle size={24} /></button>
+        <button onClick={() => setActiveTab('home')} className={`p-3 transition-colors ${activeTab === 'home' ? cText : 'text-neutral-600'}`}><Home size={24} /></button>
+        <button onClick={() => setActiveTab('friends')} className={`p-3 transition-colors ${activeTab === 'friends' ? cText : 'text-neutral-600'}`}><Users size={24} /></button>
+        <button onClick={() => setActiveTab('custom')} className={`w-14 h-14 rounded-full flex items-center justify-center text-black -translate-y-5 shadow-[0_0_25px_rgba(255,255,255,0.2)] active:scale-95 transition-transform`} style={{ backgroundColor: activeSkin.hex }}><Plus size={30} /></button>
+        <button onClick={() => setActiveTab('leaderboard')} className={`p-3 transition-colors ${activeTab === 'leaderboard' ? cText : 'text-neutral-600'}`}><Globe size={24} /></button>
+        <button onClick={() => setActiveTab('history')} className={`p-3 transition-colors ${activeTab === 'history' ? cText : 'text-neutral-600'}`}><CheckCircle size={24} /></button>
       </div>
     </div>
   );
